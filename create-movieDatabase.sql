@@ -86,7 +86,7 @@ CREATE TABLE tvDetail(
     prodCountry VARCHAR(50),
     epiRuntime INTEGER
 );
-
+https://www.kaggle.com/datasets/asaniczka/full-tmdb-tv-shows-dataset-2023-150k-shows
 .import "/Users/thebear/Desktop/UC Merced Homework/CSE 111/Project 2/TMDB_tv_dataset_v3.csv" tvDetail
 
 
