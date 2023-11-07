@@ -56,38 +56,38 @@ CREATE TABLE movieDetails (
 .import "/Users/thebear/Desktop/UC Merced Homework/CSE 111/Project 2/imdb_top_1000.csv" movieDetails
 
 CREATE TABLE tvDetail(
-    id 
-    tvTitle
-    seasons
-    episodes
-    oriLang
-    voteCount
-    voteAvg
-    summary
-    rating
-    backdropLink
-    airDate
-    lastDate
-    homepage
-    inProduction
-    orgTitle
-    populatity
-    posterLink
-    showType
-    showStatus
-    tagline
-    genre
-    creator
-    lang
-    networks
-    origin
-    spokenLang
-    prodCompany
-    prodCountry
-    epiRuntime
-)
+    id INTEGER NOT NULL,
+    tvTitle VARCHAR(152) NOT NULL,
+    seasons INTEGER NOT NULL,
+    episodes INTEGER NOT NULL,
+    oriLang CHAR(10) NOT NULL,
+    voteCount INTEGER NOT NULL,
+    voteAvg FLOAT NOT NULL, 
+    summary VARCHAR(500) NOT NULL,
+    rating CHAR(5) NOT NULL,
+    backdropLink VARCHAR(50) NOT NULL,
+    airDate CHAR(10) NOT NULL,
+    lastDate CHAR(10) NOT NULL,
+    homepage CHAR(50),
+    inProduction CHAR(5) NOT NULL,
+    orgTitle VARCHAR(152) NOT NULL,
+    populatity FLOAT NOT NULL,
+    posterLink VARCHAR(152),
+    showType VARCHAR(50) NOT NULL,
+    showStatus VARCHAR(50) NOT NULL,
+    tagline VARCHAR(500),
+    genre VARCHAR(150),
+    creator VARCHAR(100),
+    lang VARCHAR(50),
+    networks VARCHAR(50),
+    origin CHAR(5),
+    spokenLang VARCHAR(50),
+    prodCompany VARCHAR(100),
+    prodCountry VARCHAR(50),
+    epiRuntime INTEGER
+);
 
-
+.import "/Users/thebear/Desktop/UC Merced Homework/CSE 111/Project 2/TMDB_tv_dataset_v3.csv" tvDetail
 
 
 
