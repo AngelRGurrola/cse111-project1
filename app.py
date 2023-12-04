@@ -161,8 +161,7 @@ def loginInterface(name, id, _conn):
         if num == "1":
             watchLaterInterface(name, id, _conn)
         elif num == "2":
-            print("hi")
-
+            ownedFilmsInterface(id, _conn)
         elif num == "3":
             print("hi")
         elif num == "4":
@@ -170,7 +169,77 @@ def loginInterface(name, id, _conn):
         
         else:
             print("Invalid Input: Please select a desired action with the appropriate number")
+
+def ownedFilmsInterface(id, _conn):
+    while True:
+        print("\n------------------------------------------")
+        print("OWNED FILMS LIST:")
+        statement = '''
+            SELECT * 
+            FROM OwnedFilms
+            WHERE userID = ?;
+        '''
+        arg = [id]
+        
+        cur = _conn.cursor()
+        cur.execute(statement, arg)
+        rows = cur.fetchall()
+        for row in rows:
+            print(row[1])
             
+        print("\nOPTIONS:")
+        print("1: Add to list") # Still need to be added
+        print("2: Delete from list")
+        print("3: More details on film")
+        print("4: Return back")
+        userInput = input("\nEnter option:")
+        
+        if userInput == "1":
+            print("ADD")
+        elif userInput == "2":
+            print("\nWHICH FILM DO YOU WANT TO DELETE?")
+            
+            i = 1
+            for row in rows:
+                print(i, ": ", row[1])
+                i += 1
+            print("0: Cancel")
+            deleteRow = input("\nSelect number ")
+            if int(deleteRow) != 0:
+                deleteFromOwnedFilms(id, rows[int(deleteRow) - 1][1], _conn) 
+        elif userInput == "3":
+            print("\nWHICH FILM DO YOU WANT MORE DETAIL?")
+            
+            i = 1
+            for row in rows:
+                print(i, ": ", row[1])
+                i += 1
+            print("0: Cancel")
+            deleteRow = input("\nSelect number ")
+            if int(deleteRow) != 0:
+                filmDetails(rows[int(deleteRow) - 1][1], _conn)
+        elif userInput == "4":
+            break
+        else:
+            print("Invalid Option")
+
+def deleteFromOwnedFilms(id, filmName, _conn):
+    cur = _conn.cursor()
+    args = [id, filmName]
+    
+    statement = '''
+        DELETE FROM OwnedFilms
+        WHERE userID = ?
+            AND filmName = ?;
+    '''
+    cur.execute(statement, args)
+    print(filmName, "HAS BEEN DELETED FROM YOUR LIST.")
+    
+    # Uncomment this to save the changes in the database
+    # cur.commit()
+        
+    return 0
+                   
 def watchLaterInterface(name, id, _conn):
     while True:
         print("\n------------------------------------------")
@@ -189,7 +258,7 @@ def watchLaterInterface(name, id, _conn):
             print(row[1])
         
         print("\nOPTIONS:") 
-        print("1: Add to list")
+        print("1: Add to list") # Still need to be added
         print("2: Delete from list")
         print("3: More details on film")
         print("4: Return back")
@@ -265,13 +334,15 @@ def filmDetails (filmName, _conn):
     rows = cur.fetchall()
     
     for row in rows:
-        print(f"Movie Title: {row[0]}")
+        print(f"\nMovie Title: {row[0]}")
         print(f"Year: {row[1]}")
         print(f"Genre: {row[2]}")
         print(f"Summary: {row[3]}")
         print(f"imbdRating: {row[4]}")
         print(f"Director: {row[5]}")
         print(f"Stars: {row[6]}, {row[7]}, {row[8]}, {row[9]}")
+        
+    input("\nPress enter to continue...")
     
     
     return 0
