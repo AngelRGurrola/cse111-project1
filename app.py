@@ -37,6 +37,8 @@ def start(_conn):
                 print("Invalid Input: Please select a desired action with the appropriate number")
 
 def create(_conn):
+    cur = _conn.cursor()
+    
     print("\n    Creating User")
     print("-------------------------------")
     user_name = input("Enter User Name: ")
@@ -47,17 +49,22 @@ def create(_conn):
     plat_d = changeDisney()
 
     sql = """SELECT max(userID) + 1 FROM Users"""
-    cur = _conn.cursor()
     cur.execute(sql)
     rows = cur.fetchall()
-    for row in rows:        #DO I NEED TO ITERATE TO GO INTO THE RESULT
-        user_id = row[0]
-    print("%d, %s, %d, %d, %d, %d" % (user_id, user_name, plat_a, plat_h, plat_n, plat_d)) #testing the caputer of User Inputs
+    
+    statement = '''
+        INSERT INTO Users VALUES(?, ?, ?, ?, ?, ?)
+    '''
+    args = [rows[0][0], user_name, plat_a, plat_h, plat_n, plat_d]
+    cur.execute(statement, args)
+    
+    # Uncomment to commit changes to database
+    # cur.commit()
 
 def changeAmazon():
     while True:
-        check = input("\nAmazon Prime Y or N: ")
-        check.upper()
+        check = (input("\nAmazon Prime Y or N: ")).upper()
+
         if check == "Y":
             plat_a = 1
             return plat_a
@@ -69,8 +76,7 @@ def changeAmazon():
 
 def changeHulu():
     while True:
-        check = input("\nHULU Y or N: ")
-        check.upper()
+        check = (input("HULU Y or N: ")).upper()
         if check == "Y":
             plat_h = 1
             return plat_h
@@ -82,7 +88,7 @@ def changeHulu():
 
 def changeNetflix():
     while True:
-        check = input("\nNetflix Y or N: ")
+        check = (input("Netflix Y or N: ")).upper()
         check.upper()
         if check == "Y":
             plat_n = 1
@@ -95,7 +101,7 @@ def changeNetflix():
 
 def changeDisney():
     while True:
-        check = input("\nDisney+ Y or N: ")
+        check = (input("Disney+ Y or N: ")).upper()
         check.upper()
         if check == "Y":
             plat_d = 1
