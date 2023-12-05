@@ -273,7 +273,7 @@ def watchLaterInterface(name, id, _conn):
         if userInput == "0":
             break
         elif userInput == "1":
-            print("ADD")
+            searchFilm(id, _conn)
         elif userInput == "2": 
             print("\nWHICH FILM DO YOU WANT TO DELETE?")
             
