@@ -1,5 +1,6 @@
 import sqlite3
-from sqlite3 import Error  
+from sqlite3 import Error
+import re
 
 def openConnection(_dbFile):
     conn = None
