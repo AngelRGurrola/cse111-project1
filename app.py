@@ -353,6 +353,17 @@ def filmDetails (filmName, _conn):
     
     return 0
 
+def searchFilm(_conn):
+    while True:
+        filmType = (input("TV Show or Movie?")).upper()
+        
+        if filmType == "TV SHOW":
+            return 0
+        elif filmType == "MOVIE":
+            return 0
+        else:
+            print("Invalid Film Type!")
+
 def main():
     database = r"film.sqlite"
 
