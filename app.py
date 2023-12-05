@@ -353,16 +353,91 @@ def filmDetails (filmName, _conn):
     
     return 0
 
-def searchFilm(_conn):
+def filmDetails (filmName, _conn):
+    cur = _conn.cursor()
+    arg = [filmName]
+    
+    statement = '''
+    SELECT movieTitle as Title,
+        year as Year, 
+        genre as Genre,
+        summary as Summary,
+        imdbRating as Rating,
+        director as Director,
+        star1 as Stars,
+        star2 as Stars,
+        star3 as Stars,
+        star4 as Stars
+    FROM movieDetails
+    WHERE movieTitle = ?;
+    '''
+    
+    cur.execute(statement, arg)
+    rows = cur.fetchall()
+    
+    for row in rows:
+        print(f"\nMovie Title: {row[0]}")
+        print(f"Year: {row[1]}")
+        print(f"Genre: {row[2]}")
+        print(f"Summary: {row[3]}")
+        print(f"imbdRating: {row[4]}")
+        print(f"Director: {row[5]}")
+        print(f"Stars: {row[6]}, {row[7]}, {row[8]}, {row[9]}")
+        
+    input("\nPress enter to continue...")
+    
+    
+    return 0
+
+def searchFilm(id, _conn):
     while True:
-        filmType = (input("TV Show or Movie?")).upper()
+        print("\033[1m" + "\nSelect film type" + "\033[0m")
+        filmType = (input("TV Show or Movie? ")).upper()
         
         if filmType == "TV SHOW":
             return 0
         elif filmType == "MOVIE":
-            return 0
+            searchMovie(id, _conn)
         else:
             print("Invalid Film Type!")
+
+def searchMovie(id, _conn):
+    while True:
+        print("\033[1m" + "\nWelcome to the Movie database\nTo return back enter 0" + "\033[0m" )
+
+        userFilter = input("Select how you want to search by: Title, director, genre, year, runtime, stars: ")
+        if userFilter != "0":  
+            #userFilter = userFilter.split(", ")
+            userFilter = re.split(r'[, ]', userFilter)
+            userFilter = [word for word in userFilter if word]
+            userInput = []
+            i = 0
+            for filters in userFilter:
+                match (userFilter[i]).upper:
+                    case "TITLE":
+                        userInput.append(input("Enter Title: "))
+                        userFilter[i] = "movieTitle"
+                    case "DIRECTOR":
+                        userInput.append(input("Enter director: "))
+                        userFilter[i] = "director"
+                    case "GENRE":
+                        userInput.append(input("Enter genre: "))
+                        userFilter[i] = "genre"
+                    case "YEAR":
+                        userInput.append(input("Enter year:"))
+                        userFilter[i] = "year"
+                    case "RUNTIME":
+                        userInput.append(input("Enter runtime(minutes): "))
+                        userFilter[i] = "runtime"
+                    case "STARS":
+                        userInput.append(input("Enter star's full name: "))
+                        userFilter[i] = "star1"
+                
+        else:
+            return 0
+
+def filterMovie(id, userFitler, userInput, _conn):
+    return 0
 
 def streamPlat(id, _conn):
     while True:
@@ -371,6 +446,7 @@ def streamPlat(id, _conn):
         print("0. Return back")
         print("1. Update Platforms")
         print("2. View current Platforms")
+        print("3. Search Films in Platforms")
         choice = input("Enter option: ")
         if choice == "0":
             return 0
@@ -378,7 +454,12 @@ def streamPlat(id, _conn):
             updatePlat(id, _conn)
         elif choice == "2":
             viewPlat(id, _conn)
-            
+        elif choice == "3":
+            searchPlat(id, _conn)
+
+def searchPlat(id, _conn):
+    print("------------------------------------------")
+
 
 def viewPlat(id, _conn):
     sql = """SELECT amazonPrime, hulu, netflix, disney FROM Users WHERE userID = ?"""
