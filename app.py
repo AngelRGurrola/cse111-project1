@@ -317,41 +317,6 @@ def deleteFromWatchLater (id, filmName, _conn):
     
     return 0
         
-def filmDetails (filmName, _conn):
-    cur = _conn.cursor()
-    arg = [filmName]
-    
-    statement = '''
-    SELECT movieTitle as Title,
-        year as Year, 
-        genre as Genre,
-        summary as Summary,
-        imdbRating as Rating,
-        director as Director,
-        star1 as Stars,
-        star2 as Stars,
-        star3 as Stars,
-        star4 as Stars
-    FROM movieDetails
-    WHERE movieTitle = ?;
-    '''
-    
-    cur.execute(statement, arg)
-    rows = cur.fetchall()
-    
-    for row in rows:
-        print(f"\nMovie Title: {row[0]}")
-        print(f"Year: {row[1]}")
-        print(f"Genre: {row[2]}")
-        print(f"Summary: {row[3]}")
-        print(f"imbdRating: {row[4]}")
-        print(f"Director: {row[5]}")
-        print(f"Stars: {row[6]}, {row[7]}, {row[8]}, {row[9]}")
-        
-    input("\nPress enter to continue...")
-    
-    
-    return 0
 
 def filmDetails (filmName, _conn):
     cur = _conn.cursor()
