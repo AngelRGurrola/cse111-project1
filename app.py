@@ -274,7 +274,7 @@ def watchLaterInterface(name, id, _conn):
         if userInput == "0":
             break
         elif userInput == "1":
-            searchFilm(id, _conn)
+            searchFilm(id, True, _conn)
         elif userInput == "2": 
             print("\nWHICH FILM DO YOU WANT TO DELETE?")
             
@@ -354,7 +354,7 @@ def filmDetails (filmName, _conn):
     
     return 0
 
-def searchFilm(id, _conn):
+def searchFilm(id, add, _conn):
     while True:
         print("\033[1m" + "\nSelect film type" + "\033[0m")
         filmType = (input("TV Show or Movie? ")).upper()
@@ -362,11 +362,12 @@ def searchFilm(id, _conn):
         if filmType == "TV SHOW":
             return 0
         elif filmType == "MOVIE":
-            searchMovie(id, _conn)
+            searchMovie(id, add, _conn)
+            return 0
         else:
             print("Invalid Film Type!")
 
-def searchMovie(id, _conn):
+def searchMovie(id, add, _conn):
     while True:
         print("\033[1m" + "\nWelcome to the Movie database\nTo return back enter 0" + "\033[0m" )
 
@@ -398,66 +399,173 @@ def searchMovie(id, _conn):
                         userInput.append(input("Enter star's full name: "))
                         userFilter[i] = "star1"
                 i = i + 1
-            print(userFilter[0])
-            filterMovie(id, userFilter, userInput, _conn)
+            filterMovie(id, userFilter, userInput, add, _conn)
+            return 0
                 
         else:
             return 0
 
-def filterMovie(id, userFilter, userInput, _conn):
+def filterMovie(id, userFilter, userInput, add, _conn):
     cur = _conn.cursor()
-    
+    runtime = False
+    runtimeIndex = -1
     match len(userInput):
         case 1:
-            print("1")
-            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?;"
-            args = [("%") + userInput[0] + ("%")]
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                statement = f"select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} < ?;"
+                args = [userInput[runtimeIndex]]
+            else:  
+                statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?;"
+                args = [("%") + userInput[0] + ("%")]
         case 2:
-            print("2")
-            print(userInput[0], " ", userFilter[0])
-            print(userInput[1], " ", userFilter[1])
-            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]} like ?;"
-            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%")]
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                index = []
+                for x in range(len(userFilter) + 1):
+                    if x != runtimeIndex:
+                        index.append(x)
+                statement = f"select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} < ? and {userFilter[index[0]]} like ?;"
+                args = [userInput[runtimeIndex], ("%") + userInput[index[0]] + ("%")]
+            else:
+                statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]} like ?;"
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%")]
         case 3: 
-            print("3")
-            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                index = []
+                for x in range(len(userFilter) + 1):
+                    if x != runtimeIndex:
+                        index.append(x)
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} < ?
+                    and {userFilter[index[0]]} like ?
+                    and {userFilter[index[1]]} like ?;"""
+                args = [userInput[runtimeIndex], ("%") + userInput[index[0]] + ("%"), ("%") + userInput[index[1]] + ("%")]
+            else:
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
                 and {userFilter[1]} like ?
                 and {userFilter[2]} like ?;"""
-            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%")]
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%")]
         case 4:
-            print("4")
-            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
-                and {userFilter[1]} like ?
-                and {userFilter[2]} like ?
-                and {userFilter[3]} like ?;"""
-            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%")]
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                index = []
+                for x in range(len(userFilter) + 1):
+                    if x != runtimeIndex:
+                        index.append(x)
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} < ?
+                    and {userFilter[index[0]]} like ?
+                    and {userFilter[index[1]]} like ?
+                    and {userFilter[index[2]]} like ?;"""
+                args = [userInput[runtimeIndex], ("%") + userInput[index[0]] + ("%"), ("%") + userInput[index[1]] + ("%"), ("%") + userInput[index[2]] + ("%")]
+            else:
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                    and {userFilter[1]} like ?
+                    and {userFilter[2]} like ?
+                    and {userFilter[3]} like ?;"""
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%")]
+        
         case 5:
-            print("5")
-            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
-                and {userFilter[1]} like ?
-                and {userFilter[2]} like ?
-                and {userFilter[3]} like ?
-                and {userFilter[4]} like ?;"""
-            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%")]
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                index = []
+                for x in range(len(userFilter) + 1):
+                    if x != runtimeIndex:
+                        index.append(x)
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} like ?
+                    and {userFilter[index[0]]} like ?
+                    and {userFilter[index[1]]} like ?
+                    and {userFilter[index[2]]} like ?
+                    and {userFilter[index[3]]} like ?;"""
+                args = [userInput[runtimeIndex], ("%") + userInput[index[0]] + ("%"), ("%") + userInput[index[1]] + ("%"), ("%") + userInput[index[2]] + ("%"), ("%") + userInput[index[3]] + ("%")]
+            else:
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                    and {userFilter[1]} like ?
+                    and {userFilter[2]} like ?
+                    and {userFilter[3]} like ?
+                    and {userFilter[4]} like ?;"""
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%")]
         case 6:
-            print("5")
-            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
-                and {userFilter[1]} like ?
-                and {userFilter[2]} like ?
-                and {userFilter[3]} like ?
-                and {userFilter[4]} like ?
-                and {userFilter(5)} like ?;"""
-            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%"), ("%") + userInput[5] + ("%")]
-            
-            
+            i = 0
+            for attribute in userFilter:
+                if attribute == "runtime":
+                    runtime = True
+                    runtimeIndex = i
+                i += 1
+            if runtime:
+                index = []
+                for x in range(len(userFilter) + 1):
+                    if x != runtimeIndex:
+                        index.append(x)
+                statement = f"""select movieTitle, year from movieDetails where {userFilter[runtimeIndex]} < ?
+                    and {userFilter[index[0]]} like ?
+                    and {userFilter[index[1]]} like ?
+                    and {userFilter[index[2]]} like ?
+                    and {userFilter[index[3]]} like ?
+                    and {userFilter[index[4]]} like ?;"""
+                args = [userInput[runtimeIndex], ("%") + userInput[index[0]] + ("%"), ("%") + userInput[index[1]] + ("%"), ("%") + userInput[index[2]] + ("%"), ("%") + userInput[index[3]] + ("%"), ("%") + userInput[index[4]] + ("%")]
+            else:
+                tatement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                    and {userFilter[1]} like ?
+                    and {userFilter[2]} like ?
+                    and {userFilter[3]} like ?
+                    and {userFilter[4]} like ?
+                    and {userFilter[5]} like ?;"""
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%"), ("%") + userInput[5] + ("%")]
+        
     cur.execute(statement, args)
     
     rows = cur.fetchall()
     print("\nResults:")
+    i = 1
     for row in rows:
-        print(row)
+        print(f"{i}: {row[0]}")
+        i += 1
     
+    if add:
+        addFilm = input("Which film # do you want to add: ")
+        if int(addFilm) > 0 and int(addFilm) < i:
+            addToWatchLater(id, rows[int(addFilm) - 1][0], _conn)
+            return 0
+    else:
+        input("Press enter to continue...")
     
+    return 0
+
+def addToWatchLater(id, filmTitle, _conn):
+    cur = _conn.cursor()
+    statement = """
+        insert into WatchLater values (?, ?)
+    """
+    args = [id, filmTitle]
+    cur.execute(statement, args)
+    print(filmTitle, " HAS BEEN ADDED TO WATCH LATER")
+    input("Press enter to continue...")
     return 0
 
 def streamPlat(id, _conn):
