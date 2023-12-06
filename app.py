@@ -2,6 +2,7 @@ import sqlite3
 import re
 from sqlite3 import Error  
 
+
 def openConnection(_dbFile):
     conn = None
     try:
@@ -424,8 +425,6 @@ def filterMovie(id, userFilter, userInput, _conn):
     rows = cur.fetchall()
     print("\nResults:")
     print(rows)
-    
-    
     return 0
 
 def streamPlat(id, _conn):
