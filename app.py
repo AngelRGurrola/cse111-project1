@@ -70,7 +70,7 @@ def changeAmazon():
             plat_a = 1
             return plat_a
         elif check == "N":
-            plat_a == 0
+            plat_a = 0
             return plat_a
         else:
             print("Please enter a correct response")
@@ -131,7 +131,7 @@ def login(_conn):
         print("-------------------------------")
         check = True
         while check:
-            user = input("Enter User Name: ")
+            user = input("Enter User Name or 0 to cancel Login: ")
             sql = """SELECT userName, userID FROM Users WHERE userName = ?"""
             args = [user]
             cur = _conn.cursor()
@@ -146,7 +146,10 @@ def login(_conn):
                     print(p)
                     spell_check = 1
                     check = False
-            if spell_check == 0:
+            if user == "0":
+                print("Returning to previous...")
+                return 0
+            elif spell_check == 0:
                 print("Incorrect User OR User does not exist")
 
         loginInterface(user_name, user_id, _conn)
@@ -158,22 +161,20 @@ def loginInterface(name, id, _conn):
     while True:
         print("\n------------------------------------------")
         print("WELCOME %s TO YOUR FILM ORGANIZER" % (name))
+        print("0. Log Out")
         print("1. Watch Later")
         print("2. Owned Films")
         print("3. Streaming Platform")
-        print("4. Log Out")
 
         num = input("\nEnter desired number here: ")
-
-        if num == "1":
+        if num == "0":
+            break
+        elif num == "1":
             watchLaterInterface(name, id, _conn)
         elif num == "2":
             ownedFilmsInterface(id, _conn)
         elif num == "3":
-            print("hi")
-        elif num == "4":
-            break
-        
+            streamPlat(id, _conn)
         else:
             print("Invalid Input: Please select a desired action with the appropriate number")
 
@@ -195,13 +196,15 @@ def ownedFilmsInterface(id, _conn):
             print(row[1])
             
         print("\nOPTIONS:")
+        print("0: Return back")
         print("1: Add to list") # Still need to be added
         print("2: Delete from list")
         print("3: More details on film")
-        print("4: Return back")
         userInput = input("\nEnter option:")
         
-        if userInput == "1":
+        if userInput == "0":
+            break
+        elif userInput == "1":
             print("ADD")
         elif userInput == "2":
             print("\nWHICH FILM DO YOU WANT TO DELETE?")
@@ -225,8 +228,6 @@ def ownedFilmsInterface(id, _conn):
             deleteRow = input("\nSelect number ")
             if int(deleteRow) != 0:
                 filmDetails(rows[int(deleteRow) - 1][1], _conn)
-        elif userInput == "4":
-            break
         else:
             print("Invalid Option")
 
@@ -265,13 +266,14 @@ def watchLaterInterface(name, id, _conn):
             print(row[1])
         
         print("\nOPTIONS:") 
+        print("0: Return back")
         print("1: Add to list") # Still need to be added
         print("2: Delete from list")
         print("3: More details on film")
-        print("4: Return back")
         userInput = input("\nEnter option:")
-        
-        if userInput == "1":
+        if userInput == "0":
+            break
+        elif userInput == "1":
             searchFilm(id, _conn)
         elif userInput == "2": 
             print("\nWHICH FILM DO YOU WANT TO DELETE?")
@@ -295,8 +297,6 @@ def watchLaterInterface(name, id, _conn):
             deleteRow = input("\nSelect number ")
             if int(deleteRow) != 0:
                 filmDetails(rows[int(deleteRow) - 1][1], _conn)
-        elif userInput == "4":
-            break
         else:
             print("Invalid option")
         
@@ -317,7 +317,7 @@ def deleteFromWatchLater (id, filmName, _conn):
     # cur.commit()
     
     return 0
-        
+
 def filmDetails (filmName, _conn):
     cur = _conn.cursor()
     arg = [filmName]
@@ -378,7 +378,7 @@ def searchMovie(id, _conn):
             userInput = []
             i = 0
             for filters in userFilter:
-                match (userFilter[i]).upper:
+                match filters.upper():
                     case "TITLE":
                         userInput.append(input("Enter Title: "))
                         userFilter[i] = "movieTitle"
@@ -397,12 +397,100 @@ def searchMovie(id, _conn):
                     case "STARS":
                         userInput.append(input("Enter star's full name: "))
                         userFilter[i] = "star1"
+            print(userFilter[0])
+            filterMovie(id, userFilter, userInput, _conn)
                 
         else:
             return 0
 
-def filterMovie(id, userFitler, userInput, _conn):
+def filterMovie(id, userFilter, userInput, _conn):
+    cur = _conn.cursor()
+    
+    match len(userInput):
+        case 1:
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?;"
+            args = [userInput[0]]
+        case 2:
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]};"
+            args = [userInput[0], userInput[1]]
+        case 3: 
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                and {userFilter[1]} like ?
+                and {userFilter[2]} like ?;"
+            args = [userInput[0], userInput[1], userInput[2]]
+            
+    cur.execute(statement, args)
+    
+    rows = cur.fetchall()
+    print("\nResults:")
+    print(rows)
+    
+    
     return 0
+
+def streamPlat(id, _conn):
+    while True:
+        print("------------------------------------------")
+        print("\nPLATFORM MANAGER")
+        print("0. Return back")
+        print("1. Update Platforms")
+        print("2. View current Platforms")
+        print("3. Search Films in Platforms")
+        choice = input("Enter option: ")
+        if choice == "0":
+            return 0
+        elif choice == "1":
+            updatePlat(id, _conn)
+        elif choice == "2":
+            viewPlat(id, _conn)
+        elif choice == "3":
+            searchPlat(id, _conn)
+
+def searchPlat(id, _conn):
+    print("------------------------------------------")
+
+
+def viewPlat(id, _conn):
+    sql = """SELECT amazonPrime, hulu, netflix, disney FROM Users WHERE userID = ?"""
+    args = [id]
+    cur = _conn.cursor()
+    cur.execute(sql, args)
+    rows = cur.fetchall()
+    list_p = []
+    for row in rows:
+        plat_a = row[0]
+        plat_h = row[1]
+        plat_n = row[2]
+        plat_d = row[3]
+    if plat_a == 1:
+        list_p.append("Amazon Prime")
+    if plat_h == 1:
+        list_p.append("Hulu")
+    if plat_n == 1:
+        list_p.append("Netflix")
+    if plat_d == 1:
+        list_p.append("Disney")
+
+    print("\n------------------------------------------")
+    if plat_a + plat_h + plat_n + plat_d == 0:
+        print("You are currently not subscribed to any Platforms")
+    else:
+        print(*list_p, sep= ", ", end=" ")
+        print("are your current platforms")
+
+def updatePlat(id, _conn):         
+    print("\nFilm Platforms: Amazon Prime / HULU / Netflix / Disney+")
+    plat_a = changeAmazon()
+    plat_h = changeHulu()
+    plat_n = changeNetflix()
+    plat_d = changeDisney()
+    statement = """UPDATE Users
+                    SET amazonPrime = ?, hulu = ?, netflix = ?, disney = ?
+                    WHERE userID = ?"""
+    args = [plat_a, plat_h, plat_n, plat_d, id]
+    cur = _conn.cursor()
+    cur.execute(statement, args) 
+
 def main():
     database = r"film.sqlite"
 
