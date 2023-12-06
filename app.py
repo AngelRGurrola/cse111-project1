@@ -2,7 +2,6 @@ import sqlite3
 import re
 from sqlite3 import Error  
 
-
 def openConnection(_dbFile):
     conn = None
     try:
@@ -398,6 +397,7 @@ def searchMovie(id, _conn):
                     case "STARS":
                         userInput.append(input("Enter star's full name: "))
                         userFilter[i] = "star1"
+                i = i + 1
             print(userFilter[0])
             filterMovie(id, userFilter, userInput, _conn)
                 
@@ -409,22 +409,55 @@ def filterMovie(id, userFilter, userInput, _conn):
     
     match len(userInput):
         case 1:
+            print("1")
             statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?;"
-            args = [userInput[0]]
+            args = [("%") + userInput[0] + ("%")]
         case 2:
-            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]};"
-            args = [userInput[0], userInput[1]]
+            print("2")
+            print(userInput[0], " ", userFilter[0])
+            print(userInput[1], " ", userFilter[1])
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]} like ?;"
+            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%")]
         case 3: 
-            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?
+            print("3")
+            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
                 and {userFilter[1]} like ?
-                and {userFilter[2]} like ?;"
-            args = [userInput[0], userInput[1], userInput[2]]
+                and {userFilter[2]} like ?;"""
+            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%")]
+        case 4:
+            print("4")
+            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                and {userFilter[1]} like ?
+                and {userFilter[2]} like ?
+                and {userFilter[3]} like ?;"""
+            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%")]
+        case 5:
+            print("5")
+            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                and {userFilter[1]} like ?
+                and {userFilter[2]} like ?
+                and {userFilter[3]} like ?
+                and {userFilter[4]} like ?;"""
+            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%")]
+        case 6:
+            print("5")
+            statement = f"""select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                and {userFilter[1]} like ?
+                and {userFilter[2]} like ?
+                and {userFilter[3]} like ?
+                and {userFilter[4]} like ?
+                and {userFilter(5)} like ?;"""
+            args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%"), ("%") + userInput[5] + ("%")]
+            
             
     cur.execute(statement, args)
     
     rows = cur.fetchall()
     print("\nResults:")
-    print(rows)
+    for row in rows:
+        print(row)
+    
+    
     return 0
 
 def streamPlat(id, _conn):
@@ -447,25 +480,6 @@ def streamPlat(id, _conn):
 
 def searchPlat(id, _conn):
     print("------------------------------------------")
-    print("SEARCH ACROSS OWNED PLATFORMS:")
-    while True:
-        print("\033[1m" + "\nSelect film type" + "\033[0m")
-        print("\033[1m" + "\nEnter 0 to cancel" + "\033[0m")
-        filmType = (input("1. TV show \n2. Movie \n3. Both Tv & Movie \nEnter option: ")).upper()
-        
-        if filmType == "1":
-            searchPlatFilm(id, filmType, _conn)
-        elif filmType == "2":
-            searchPlatFilm(id, filmType, _conn)
-        elif filmType == "3":
-            searchPlatFilm(id, filmType, _conn)
-        elif filmType == "0":
-            return
-        else:
-            print("Invalid Input")
-
-def searchPlatFilm(id, type, _conn):
-    print("FINISH")
 
 
 def viewPlat(id, _conn):
