@@ -447,6 +447,25 @@ def streamPlat(id, _conn):
 
 def searchPlat(id, _conn):
     print("------------------------------------------")
+    print("SEARCH ACROSS OWNED PLATFORMS:")
+    while True:
+        print("\033[1m" + "\nSelect film type" + "\033[0m")
+        print("\033[1m" + "\nEnter 0 to cancel" + "\033[0m")
+        filmType = (input("1. TV show \n2. Movie \n3. Both Tv & Movie \nEnter option: ")).upper()
+        
+        if filmType == "1":
+            searchPlatFilm(id, filmType, _conn)
+        elif filmType == "2":
+            searchPlatFilm(id, filmType, _conn)
+        elif filmType == "3":
+            searchPlatFilm(id, filmType, _conn)
+        elif filmType == "0":
+            return
+        else:
+            print("Invalid Input")
+
+def searchPlatFilm(id, type, _conn):
+    print("FINISH")
 
 
 def viewPlat(id, _conn):
