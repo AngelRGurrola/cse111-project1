@@ -1,6 +1,7 @@
 import sqlite3
-from sqlite3 import Error
 import re
+from sqlite3 import Error  
+
 
 def openConnection(_dbFile):
     conn = None
@@ -317,7 +318,6 @@ def deleteFromWatchLater (id, filmName, _conn):
     # cur.commit()
     
     return 0
-        
 
 def filmDetails (filmName, _conn):
     cur = _conn.cursor()
@@ -379,7 +379,7 @@ def searchMovie(id, _conn):
             userInput = []
             i = 0
             for filters in userFilter:
-                match (userFilter[i]).upper:
+                match filters.upper():
                     case "TITLE":
                         userInput.append(input("Enter Title: "))
                         userFilter[i] = "movieTitle"
@@ -398,11 +398,33 @@ def searchMovie(id, _conn):
                     case "STARS":
                         userInput.append(input("Enter star's full name: "))
                         userFilter[i] = "star1"
+            print(userFilter[0])
+            filterMovie(id, userFilter, userInput, _conn)
                 
         else:
             return 0
 
-def filterMovie(id, userFitler, userInput, _conn):
+def filterMovie(id, userFilter, userInput, _conn):
+    cur = _conn.cursor()
+    
+    match len(userInput):
+        case 1:
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?;"
+            args = [userInput[0]]
+        case 2:
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ? and {userFilter[1]};"
+            args = [userInput[0], userInput[1]]
+        case 3: 
+            statement = f"select movieTitle, year from movieDetails where {userFilter[0]} like ?
+                and {userFilter[1]} like ?
+                and {userFilter[2]} like ?;"
+            args = [userInput[0], userInput[1], userInput[2]]
+            
+    cur.execute(statement, args)
+    
+    rows = cur.fetchall()
+    print("\nResults:")
+    print(rows)
     return 0
 
 def streamPlat(id, _conn):
