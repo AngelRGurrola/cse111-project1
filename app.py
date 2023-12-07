@@ -213,7 +213,7 @@ def ownedFilmsInterface(id, _conn):
             
         print("\nOPTIONS:")
         print("0: Return back")
-        print("1: Add to list") # Still need to be added
+        print("1: Add to list")
         print("2: Delete from list")
         print("3: More details on film")
         userInput = input("\033[1m" + "\nEnter option:" + "\033[0m")
@@ -233,8 +233,8 @@ def ownedFilmsInterface(id, _conn):
                 i += 1
             print("0: Cancel")
             deleteRow = input("\nSelect number ")
-            if int(deleteRow) == 2:
-                deleteFromOwnedFilms(id, rows[int(deleteRow) - 1][1], _conn) 
+            if int(deleteRow) != 0:
+                deleteFromOwnedFilms(id, rows[int(deleteRow) - 1][1], _conn)
         elif userInput == "3":
             clearTerminal()
             print("\nWHICH FILM DO YOU WANT MORE DETAIL?")
@@ -246,7 +246,7 @@ def ownedFilmsInterface(id, _conn):
             print("0: Cancel")
             deleteRow = input("\nSelect number ")
             if int(deleteRow) != 0:
-                filmDetails(rows[int(deleteRow) - 1][1], _conn)
+                filmDetails(rows[int(deleteRow) - 1][1], _conn, 0,  id, True)
         else:
             print("Invalid Option")
 
@@ -260,7 +260,9 @@ def deleteFromOwnedFilms(id, filmName, _conn):
             AND filmName = ?;
     '''
     cur.execute(statement, args)
+    clearTerminal()
     print(filmName, "HAS BEEN DELETED FROM YOUR LIST.")
+    input("Press enter to continue...")
     
     # Uncomment this to save the changes in the database
     # cur.commit()
@@ -318,7 +320,7 @@ def watchLaterInterface(name, id, _conn):
             print("0: Cancel")
             deleteRow = input("\nSelect number ")
             if int(deleteRow) != 0:
-                filmDetails(rows[int(deleteRow) - 1][1], _conn)
+                filmDetails(rows[int(deleteRow) - 1][1], _conn, 0, id, True)
         else:
             print("Invalid option")
         
@@ -333,14 +335,16 @@ def deleteFromWatchLater (id, filmName, _conn):
     '''
     
     cur.execute(statement, args)
+    clearTerminal()
     print(filmName, "HAS BEEN DELETED FROM YOUR LIST.")
+    input("Press enter to continue...")
     
     # Uncomment this to save the changes in the database
     # cur.commit()
     
     return 0
 
-def filmDetails (filmName, _conn, year = 0):
+def filmDetails (filmName, _conn, year = 0, id = 0, ownedFilms = False):
     clearTerminal()
     cur = _conn.cursor()
     arg = [filmName]
@@ -433,11 +437,97 @@ def filmDetails (filmName, _conn, year = 0):
             print(f"Episodes: {row[8]}")
         else:
             print(f"Runtime: {row[6]}")
-        
-        
+
+    if ownedFilms: 
+        statement = """select subLanguage, resolution 
+            from Subtitles,
+                OwnedFilms
+            where OwnedFilms.userID = ?
+                and Subtitles.filmName = ?
+                and OwnedFilms.filmName = Subtitles.filmName;
+                """
+        subArgs =[id, filmName]
+        cur.execute(statement, subArgs)
+        subs = cur.fetchall()
+        print("Subtiles: ", end="")
+        for row in subs:
+            print(row[0], end=" ")
+        print("\nResolution: ", end="")
+        for row in subs:
+            print(row[1], end="p ")    
+        print()
+        availInPlat(id, _conn, filmName)
+    
     input("\nPress enter to continue...")
 
     return 0
+
+def availInPlat(id, _conn, filmName):
+    cur = _conn.cursor()
+
+    
+    moviePlat = """
+        select filmNetflix,
+            filmHulu,
+            filmPrime,
+            filmDisney
+        from streamingPlat,
+            Users
+        where Users.userID = ?
+            and streamingPlat.filmTitle = ?;
+    """
+    args = [id, filmName]
+    cur.execute(moviePlat, args)
+    filmPlat = cur.fetchall()
+    
+    userPlat = """
+        select netflix,
+            hulu,
+            amazonPrime,
+            disney
+        from Users
+        where userID = ?"""
+    args = [id]
+    cur.execute(userPlat, args)
+    avPlat = cur.fetchall()
+
+    print(f"{filmName} is", end=" ")
+    notFound = True
+    
+    if len(filmPlat) == 1 and len(filmPlat) == 1:
+        if avPlat[0][0] == 1 and filmPlat[0][0] == 1:
+            if notFound:
+                print("Netflix", end=" ")
+                notFound = False
+            else:
+                print("and Netflix", end=" ")
+        if avPlat[0][1] == 1 and filmPlat[0][1] == 1:
+            if notFound:
+                print("Hulu", end=" ")
+                notFound = False
+            else:
+                print("and Hulu")
+        if avPlat[0][2] == 1 and filmPlat[0][2] == 1:
+            if notFound:
+                print("Amazon Prime", end=" ")
+                notFound = False
+            else:
+                print("and Amazon Prime", end=" ")
+        if avPlat[0][3] == 1 and filmPlat[0][3] == 1:
+            if notFound:
+                print("Disney Plus", end=" ")
+                notFound = False
+            else:
+                print("and Disney Plus", end=" ")
+    else:
+       print("not available in your current subscriptions") 
+       notFound = False
+    
+    if notFound:
+        print("not available in your current subscriptions") 
+        
+    return 0
+
 
 def searchFilm(id, add, toWatchList, toOwnedFilms, _conn):
     while True:
@@ -1070,7 +1160,7 @@ def searchPlatFilm(id, type, _conn):
         filmType = "Tv Show"
         fType = 1
         while True:
-            choice = input("\nSearch by %s's \n1. Title \n2. Year \n3. Genre \n0. return \nEnter option: " % (filmType))
+            choice = input("\nSearch by %s's \n1. Title \n2. Year \n0. return \nEnter option: " % (filmType))
             if choice == "0":
                 return 0
             if choice == "1":
@@ -1080,22 +1170,19 @@ def searchPlatFilm(id, type, _conn):
                 else:
                     searchPlatFilmTitle(id, fType, title, _conn)
             if choice == "2":
-                title = input("0 to return or Enter %s's Year: " % (filmType)).upper()
-                if title == "0":
+                year = input("0 to return or Enter %s's Year: " % (filmType)).upper()
+                if year == "0":
                     continue
                 else:
-                    searchPlatFilmYear(id, fType, title, _conn)
-            if choice == "3":
-                title = input("0 to return or Enter %s's Genre: " % (filmType)).upper()
-                if title == "0":
-                    continue
-                else:
-                    searchPlatFilmGenre(id, fType, title, _conn)
+                    ftable = "tvDetails"
+                    fcol = "airDate"
+                    ftitle = "tvTitle"
+                    searchPlatFilmYear(id, fType, ftable, fcol, ftitle, year, _conn)
     if type == "2":
         filmType = "Movie"
         fType = 0
         while True:
-            choice = input("\nSearch by %s's \n1. Title \n2. Year \n3. Genre \n0. return \nEnter option: " % (filmType))
+            choice = input("\nSearch by %s's \n1. Title \n2. Year \n0. return \nEnter option: " % (filmType))
             if choice == "0":
                 return 0
             if choice == "1":
@@ -1105,44 +1192,99 @@ def searchPlatFilm(id, type, _conn):
                 else:
                     searchPlatFilmTitle(id, fType, title, _conn)
             if choice == "2":
-                title = input("0 to return or Enter %s's Year: " % (filmType)).upper()
-                if title == "0":
+                year = input("0 to return or Enter %s's Year: " % (filmType)).upper()
+                if year == "0":
                     continue
                 else:
-                    searchPlatFilmYear(id, fType, title, _conn)
-            if choice == "3":
-                title = input("0 to return or Enter %s's Genre: " % (filmType)).upper()
-                if title == "0":
-                    continue
-                else:
-                    searchPlatFilmGenre(id, fType, title, _conn)
+                    ftable = "movieDetails"
+                    fcol = "year"
+                    ftitle = "movieTitle"
+                    searchPlatFilmYear(id, fType, ftable, fcol, ftitle, year, _conn)
 
-def searchPlatFilmGenre(id, ftype, title, _conn):
+
+
+def searchPlatFilmYear(id, ftype, ftable, fcol, ftitle, year, _conn):
     p_list = {}
-    if ftype == "0":
-        filmTable = "movieDetails"
-        filmTitle = "movieTitle"
-    elif ftype == "1":
-        filmTable = "tvDetails"
-        filmTitle = "tvTitle"
-    genres = title.split()
-    count = 0
-    for genre in genres:
-        new_genre = "%" + genre + "%"
-        genres[count] = "f.genre like " + new_genre
-        count += 1
-    print(genres)
-    if len(genres) == 1 and ftype == 0:
-        statement = f"""SELECT u.filmTitle, f.genre
-                        FROM Users u, streamingPlat p, ? f
-                        WHERE u.filmTitle = f.?
-                            AND u.ID = ?
-                            AND 
-                            AND {genre[0]}""" # making the search through the genre and joins the 3 tables using platform and titles
+    year = "'%" + year + "%'"
+    statement = f"""SELECT filmTitle
+                    FROM streamingPlat, Users, {ftable}
+                    WHERE {fcol} Like {year}
+                        AND userID = {id}
+                        AND filmType = {ftype}
+                        AND filmTitle = {ftitle}
+                        AND filmPrime = amazonPrime
+                        AND amazonPrime = 1"""
+    cur = _conn.cursor()
+    cur.execute(statement)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            p_list[row[0]] = []
+            p_list[row[0]].append("in Amazon Prime")
+
+    statement = f"""SELECT filmTitle
+                    FROM streamingPlat, Users, {ftable}
+                    WHERE {fcol} Like {year}
+                        AND userID = {id}
+                        AND filmType = {ftype}
+                        AND filmTitle = {ftitle}
+                        AND filmHulu = hulu
+                        AND hulu = 1"""
+    cur = _conn.cursor()
+    cur.execute(statement)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Hulu")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Hulu")
+    
+    statement = f"""SELECT filmTitle
+                    FROM streamingPlat, Users, {ftable}
+                    WHERE {fcol} Like {year}
+                        AND userID = {id}
+                        AND filmType = {ftype}
+                        AND filmTitle = {ftitle}
+                        AND filmNetflix = netflix
+                        AND netflix = 1"""
+    cur = _conn.cursor()
+    cur.execute(statement)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Netflix")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Netflix")
+
+    statement = f"""SELECT filmTitle
+                    FROM streamingPlat, Users, {ftable}
+                    WHERE {fcol} Like {year}
+                        AND userID = {id}
+                        AND filmType = {ftype}
+                        AND filmTitle = {ftitle}
+                        AND filmDisney = disney
+                        AND disney = 1"""
+    cur = _conn.cursor()
+    cur.execute(statement)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Disney+")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Disney+")
+                
+    for key, values in p_list.items():
+        print("\n------------------------------------------")
+        print(f"{key} {' '.join(values)}")
+    
 
 
-def searchPlatFilmYear(id, ftype, title, _conn):
-    print("2")
 
 def searchPlatFilmTitle(id, fType, title, _conn):
     p_list = {}
@@ -1225,6 +1367,7 @@ def searchPlatFilmTitle(id, fType, title, _conn):
         print(f"{key} {' '.join(values)}")
 
 
+
 def viewPlat(id, _conn):
     sql = """SELECT amazonPrime, hulu, netflix, disney FROM Users WHERE userID = ?"""
     args = [id]
@@ -1265,7 +1408,6 @@ def updatePlat(id, _conn):
     args = [plat_a, plat_h, plat_n, plat_d, id]
     cur = _conn.cursor()
     cur.execute(statement, args) 
-
 def main():
     database = r"film.sqlite"
 
