@@ -1,6 +1,8 @@
 import sqlite3
 import re
 from sqlite3 import Error  
+import os
+import platform
 
 def openConnection(_dbFile):
     conn = None
@@ -17,25 +19,33 @@ def closeConnection(_conn, _dbFile):
     except Error as e:
         print(e)
 
+def clearTerminal():
+    # Comment the line below if running on windows or change it to cls
+    if platform.system() == "Windows":
+        os.system("cls")
+    elif platform.system() == "Darwin":
+        os.system("clear")
+    return 0
+
 def start(_conn):
-        while True:
-            print("\n------------------------------------------")
-            print("MOVIE ORGANIZER: ")
-            print("1. Login Profile")
-            print("2. Create Profile")
-            print("3. End Session") 
-
-            num = input("\nEnter desired number here: ")
-
-            if num == "1":
-                login(_conn)
-            elif num == "2":
+    clearTerminal()
+    while True:
+        clearTerminal()
+        print("\n------------------------------------------")
+        print("MOVIE ORGANIZER: ")
+        print("1. Login Profile")
+        print("2. Create Profile")
+        print("3. End Session") 
+        num = input("\nEnter desired number here: ")
+        if num == "1":
+               login(_conn)
+        elif num == "2":
                 create(_conn)
-            elif num == "3":
-                break
-            
-            else:
-                print("Invalid Input: Please select a desired action with the appropriate number")
+        elif num == "3":
+            break
+           
+        else:
+            print("Invalid Input: Please select a desired action with the appropriate number")
 
 def create(_conn):
     cur = _conn.cursor()
@@ -113,7 +123,9 @@ def changeDisney():
         else:
             print("Please enter a correct response")
 
+
 def login(_conn):
+    clearTerminal()
     print("\nChoose an Existing Profile")
     try:   
         sql = """SELECT userName FROM Users"""
@@ -158,7 +170,9 @@ def login(_conn):
         print(e)
 
 def loginInterface(name, id, _conn):
+    clearTerminal()
     while True:
+        clearTerminal()
         print("\n------------------------------------------")
         print("WELCOME %s TO YOUR FILM ORGANIZER" % (name))
         print("0. Log Out")
@@ -179,7 +193,9 @@ def loginInterface(name, id, _conn):
             print("Invalid Input: Please select a desired action with the appropriate number")
 
 def ownedFilmsInterface(id, _conn):
+    clearTerminal()
     while True:
+        clearTerminal()
         print("\n------------------------------------------")
         print("OWNED FILMS LIST:")
         statement = '''
@@ -200,14 +216,16 @@ def ownedFilmsInterface(id, _conn):
         print("1: Add to list") # Still need to be added
         print("2: Delete from list")
         print("3: More details on film")
-        userInput = input("\nEnter option:")
+        userInput = input("\033[1m" + "\nEnter option:" + "\033[0m")
         
         if userInput == "0":
-            break
+            clearTerminal()
+            return 0
         elif userInput == "1":
-            print("ADD")
+            searchFilm(id, True, False, True, _conn)
         elif userInput == "2":
-            print("\nWHICH FILM DO YOU WANT TO DELETE?")
+            clearTerminal()
+            print("\nWHICH FILM DO YOU WANT TO DELETE FROM YOUR OWNED FILMS?")
             
             i = 1
             for row in rows:
@@ -215,9 +233,10 @@ def ownedFilmsInterface(id, _conn):
                 i += 1
             print("0: Cancel")
             deleteRow = input("\nSelect number ")
-            if int(deleteRow) != 0:
+            if int(deleteRow) == 2:
                 deleteFromOwnedFilms(id, rows[int(deleteRow) - 1][1], _conn) 
         elif userInput == "3":
+            clearTerminal()
             print("\nWHICH FILM DO YOU WANT MORE DETAIL?")
             
             i = 1
@@ -250,6 +269,7 @@ def deleteFromOwnedFilms(id, filmName, _conn):
                    
 def watchLaterInterface(name, id, _conn):
     while True:
+        clearTerminal()
         print("\n------------------------------------------")
         print("WATCH LATER LIST:")
         statement = '''
@@ -270,13 +290,14 @@ def watchLaterInterface(name, id, _conn):
         print("1: Add to list") # Still need to be added
         print("2: Delete from list")
         print("3: More details on film")
-        userInput = input("\nEnter option:")
+        userInput = input("\033[1m" + "\nEnter option: " + "\033[0m")
         if userInput == "0":
             break
         elif userInput == "1":
-            searchFilm(id, True, _conn)
+            searchFilm(id, True, True, False, _conn)
         elif userInput == "2": 
-            print("\nWHICH FILM DO YOU WANT TO DELETE?")
+            clearTerminal()
+            print("\nWHICH FILM DO YOU WANT TO DELETE FROM YOUR WATCH LATER?")
             
             i = 1
             for row in rows:
@@ -287,6 +308,7 @@ def watchLaterInterface(name, id, _conn):
             if int(deleteRow) != 0:
                 deleteFromWatchLater(id, rows[int(deleteRow) - 1][1], _conn)
         elif userInput == "3":
+            clearTerminal()
             print("\nWHICH FILM DO YOU WANT MORE DETAIL?")
             
             i = 1
@@ -318,7 +340,8 @@ def deleteFromWatchLater (id, filmName, _conn):
     
     return 0
 
-def filmDetails (filmName, _conn):
+def filmDetails (filmName, _conn, year = 0):
+    clearTerminal()
     cur = _conn.cursor()
     arg = [filmName]
     
@@ -336,39 +359,147 @@ def filmDetails (filmName, _conn):
     FROM movieDetails
     WHERE movieTitle = ?;
     '''
-    
-    cur.execute(statement, arg)
+    if year != 0:
+        testStatement = """
+            SELECT * FROM (
+                SELECT movieTitle as title, 
+                    genre as genre, 
+                    year as year, 
+                    summary as summary, 
+                    director as director, 
+                    NULL as creator, 
+                    runtime as runtime, 
+                    null as seasons,
+                    null as episodes 
+                FROM movieDetails 
+                WHERE movieTitle = ?
+                    and year = ?
+                UNION
+                SELECT tvTitle as title, 
+                    genre as genre, 
+                    airDate as year, 
+                    summary as summary, 
+                    NULL as director, 
+                    creator as creator, 
+                    null as runtime, 
+                    seasons as seasons, 
+                    episodes as episodes 
+                FROM tvDetails 
+                WHERE tvTitle = ? 
+                    and strftime('%Y', airDate) = ?)
+                    """
+        testArgs = [filmName, year, filmName, year]
+    else:
+        testStatement = """
+            SELECT * FROM (
+                SELECT movieTitle as title, 
+                    genre as genre, 
+                    year as year, 
+                    summary as summary, 
+                    director as director, 
+                    NULL as creator, 
+                    runtime as runtime, 
+                    null as seasons,
+                    null as episodes 
+                FROM movieDetails 
+                WHERE movieTitle = ?
+                UNION
+                SELECT tvTitle as title, 
+                    genre as genre, 
+                    airDate as year, 
+                    summary as summary, 
+                    NULL as director, 
+                    creator as creator, 
+                    null as runtime, 
+                    seasons as seasons, 
+                    episodes as episodes 
+                FROM tvDetails 
+                WHERE tvTitle = ? )
+                    """
+        testArgs = [filmName, filmName]
+    cur.execute(testStatement, testArgs)
     rows = cur.fetchall()
-    
     for row in rows:
-        print(f"\nMovie Title: {row[0]}")
-        print(f"Year: {row[1]}")
-        print(f"Genre: {row[2]}")
+        print(f"\nFilm Title: {row[0]}")
+        print(f"Genre: {row[1]}")
+        print(f"Release Year: {row[2]}")
         print(f"Summary: {row[3]}")
-        print(f"imbdRating: {row[4]}")
-        print(f"Director: {row[5]}")
-        print(f"Stars: {row[6]}, {row[7]}, {row[8]}, {row[9]}")
+        if row[4] is None:
+            print(f"Creator: {row[5]}")
+        else:
+            print(f"Director: {row[4]}")
+        if row[6] is None:
+            print(f"Seasons: {row[7]}")
+            print(f"Episodes: {row[8]}")
+        else:
+            print(f"Runtime: {row[6]}")
+        
         
     input("\nPress enter to continue...")
-    
-    
+
     return 0
 
-def searchFilm(id, add, _conn):
+def searchFilm(id, add, toWatchList, toOwnedFilms, _conn):
     while True:
-        print("\033[1m" + "\nSelect film type" + "\033[0m")
+        clearTerminal()
+        print("\033[1m" + "\nSelect film type\n0 to cancel" + "\033[0m")
         filmType = (input("TV Show or Movie? ")).upper()
         
         if filmType == "TV SHOW":
+            searchTV(id, add, toWatchList, toOwnedFilms, _conn)
             return 0
         elif filmType == "MOVIE":
-            searchMovie(id, add, _conn)
+            searchMovie(id, add, toWatchList, toOwnedFilms, _conn)
+            return 0
+        elif filmType == "0":
             return 0
         else:
             print("Invalid Film Type!")
 
-def searchMovie(id, add, _conn):
+def searchTV(id, add, toWatchList, toOwnedFilms, _conn):
     while True:
+        clearTerminal()
+        print("\033[1m" + "\nWelcome to the TV Show database\nTo return back enter 0" + "\033[0m" )
+        userFilter = input("Select how you want to search by (limit 4): \ntitle, seasons, episodes, showStatus, year, genre: ")
+        if userFilter != "0":
+            userFilter = re.split(r'[, ]', userFilter)
+            userFilter = [word for word in userFilter if word]
+            userInput = []
+            i = 0
+            for filters in userFilter:
+                match filters.upper():
+                    case 'TITLE':
+                        userInput.append(input("Enter title: "))
+                        userFilter[i] = "tvTitle"
+                    case "SEASONS":
+                        userInput.append(input("Enter how many seasons (least than and to): "))
+                        userFilter[i] = "seasons"
+                    case "EPISODES":
+                        userInput.append(input("Enter how many episodes (least than and to): "))
+                        userFilter[i] = "episodes"
+                    case "SHOWSTATUS":
+                        userInputTemp = input("Enter show status (returning or finished): ")
+                        if userInputTemp.upper() == "RETURNING":
+                            userInput.append("Returning Series")
+                        elif userInputTemp.upper() == "FINISHED":
+                            userInput.append("Ended") 
+                        userFilter[i] = "showStatus"
+                    case "YEAR":
+                        userInput.append(input("Enter year: "))
+                        userFilter[i] = "airDate"
+                    case "GENRE":
+                        userInput.append(input("Enter genre:"))
+                        userFilter[i] = "genre"
+                i += 1
+            filterTV(id, userFilter, userInput, add, toWatchList, toOwnedFilms, _conn)
+            return 0
+        else:
+            return 0
+
+
+def searchMovie(id, add, toWatchList, toOwnedFilms, _conn):
+    while True:
+        clearTerminal()
         print("\033[1m" + "\nWelcome to the Movie database\nTo return back enter 0" + "\033[0m" )
 
         userFilter = input("Select how you want to search by: Title, director, genre, year, runtime, stars: ")
@@ -399,13 +530,284 @@ def searchMovie(id, add, _conn):
                         userInput.append(input("Enter star's full name: "))
                         userFilter[i] = "star1"
                 i = i + 1
-            filterMovie(id, userFilter, userInput, add, _conn)
+            filterMovie(id, userFilter, userInput, add, toWatchList, toOwnedFilms, _conn)
             return 0
                 
         else:
             return 0
 
-def filterMovie(id, userFilter, userInput, add, _conn):
+def filterTV(id, userFilter, userInput, add, toWatchList, toOwnedFilms, _conn):
+    cur = _conn.cursor()
+    year = False
+    like = False
+    lessThan = False
+    yearIndex = -1
+    
+    i = 0
+    likeIndex = []
+    lessThanIndex = []
+    for attribute in userFilter:
+        match attribute:
+            case "airDate":
+                year = True
+                yearIndex = i
+            case "tvTitle" | "showStatus" | "genre":
+                like = True
+                likeIndex.append(i)
+            case "seasons" | "episodes":
+                lessThan = True
+                lessThanIndex.append(i)
+        i += 1
+        
+    match len(userInput):
+        case 1:
+            if year:
+                statement = f"""
+                    select tvTitle from tvDetails
+                    where strftime('%Y', {userFilter[yearIndex]}) = ?;
+                """
+                args = [userInput[yearIndex]]
+            elif like:
+                statement = f"""
+                    select tvTitle from tvDetails
+                    where {userFilter[0]} like ?;
+                """
+                args = [("%") + userInput[0] + ("%")]
+            elif lessThan:
+                statement = f"""
+                    select tvTitle from tvDetails
+                    where {userFilter[0]} <= ?;
+                """
+                args = [userInput[0]]
+        case 2:
+            if year:
+                if like:
+                    statement = f"""
+                        select tvTitle from tvDetails
+                        where strftime('%Y', {userFilter[yearIndex]}) = ?
+                            and {userFilter[likeIndex[0]]} like ?;
+                    """
+                    args = [userInput[yearIndex], ("%") + userInput[likeIndex[0]] + ("%")]
+                elif lessThan:
+                    statement = f"""
+                        select tvTitle from tvDetails
+                        where strftime('%Y', {userFilter[yearIndex]}) = ?
+                            and {userFilter[lessThanIndex[0]]} <= ?;
+                    """
+                    args = [userInput[yearIndex], userInput[lessThanIndex[0]]]
+            else:
+                if like and lessThan:
+                    statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?;
+                    """
+                    args = [ ("%") + userInput[likeIndex[0]] + ("%"), userInput[lessThanIndex[0]]]
+                elif like and not lessThan:
+                    statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?;
+                    """
+                    args = [ ("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%")]
+                else:
+                    statement = f"""select tvTitle from tvDetails
+                        where {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[lessThanIndex[1]]} <= ?;
+                    """
+                    args = [userInput[lessThanIndex[0]], userInput[lessThanIndex[1]]]                        
+        case 3:
+            if year:
+                if like:
+                    if lessThan:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where strftime('%Y', {userFilter[yearIndex]}) = ?
+                            and {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?;
+                        """
+                        args = [userInput[yearIndex], ("%") + userInput[likeIndex[0]] + ("%"), userInput[lessThanIndex[0]]]
+                    else:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where strftime('%Y', {userFilter[yearIndex]}) = ?
+                            and {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?;
+                        """
+                        args = [userInput[yearIndex], ("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%")]
+                elif lessThan:
+                    statement = f"""
+                    select tvTitle from tvDetails
+                    where strftime('%Y', {userFilter[yearIndex]}) = ?
+                        and {userFilter[lessThanIndex[0]]} <= ?
+                        and {userFilter[lessThanIndex[1]]} <= ?;
+                    """
+                    args = [userInput[yearIndex], userInput[lessThanIndex[0]], userInput[lessThanIndex[1]]]
+            else:
+                if like and len(likeIndex) == 2:
+                    statement = f"""
+                    select tvTitle from tvDetails
+                    where {userFilter[lessThanIndex[0]]} <= ?
+                        and {userFilter[likeIndex[0]]} like ?
+                        and {userFilter[likeIndex[1]]} like ?;
+                    """
+                    args = [userInput[lessThanIndex[0]], ("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%")]
+                else:
+                    statement = f"""
+                    select tvTitle from tvDetails
+                    where {userFilter[lessThanIndex[0]]} <= ?
+                        and {userFilter[lessThanIndex[1]]} <= ?
+                        and {userFilter[likeIndex[0]]} like ?;
+                    """
+                    args = [userInput[lessThanIndex[0]], userInput[lessThanIndex[1]], ("%") + userInput[likeIndex[0]] + ("%")]                                   
+        case 4:
+            if year:
+                if like:
+                    if lessThan and len(lessThanIndex) == 2:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[lessThanIndex[1]]} <= ?
+                            and {userFilter[likeIndex[0]]} like ?
+                            and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                        """
+                        args = [userInput[lessThanIndex[0]], userInput[lessThanIndex[1]], ("%") + userInput[likeIndex[0]] + ("%"), userInput[yearIndex]]
+                    elif lessThan and len(likeIndex) == 2:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                        """
+                        args = [userInput[lessThanIndex[0]], ("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), userInput[yearIndex]]
+                    elif len(likeIndex) == 3:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[likeIndex[2]]} like ?
+                            and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                        """
+                        args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), ("%") + userInput[likeIndex[2]] + ("%"), userInput[yearIndex]]
+                else:
+                    if len(lessThanIndex) == 2 and len(likeIndex) == 2:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[lessThanIndex[1]]} <= ?
+                        """
+                        args = [userInput[lessThanIndex[0]], ("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), userInput[lessThanIndex[1]]]
+                    elif len(lessThanIndex) == 1 and len(likeIndex) == 3:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[likeIndex[2]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?
+                        """
+                        args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), ("%") + userInput[likeIndex[2]] + ("%"), userInput[lessThanIndex[0]]]                                  
+        case 5:
+            if year:
+                if like:
+                    if len(lessThanIndex) == 2 and len(likeIndex) == 2:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[lessThanIndex[1]]} <= ?
+                            and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                        """
+                        args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), userInput[lessThanIndex[0]], userInput[lessThanIndex[1]], userInput[yearIndex]]     
+                    elif len(lessThanIndex) == 1 and len(likeIndex) == 3:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[likeIndex[2]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?
+                            and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                        """
+                        args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), ("%") + userInput[likeIndex[2]] + ("%"), userInput[lessThanIndex[0]], userInput[yearIndex]] 
+            else:
+                if len(lessThanIndex) == 2 and len(likeIndex) == 3:
+                        statement = f"""
+                        select tvTitle from tvDetails
+                        where {userFilter[likeIndex[0]]} like ?
+                            and {userFilter[likeIndex[1]]} like ?
+                            and {userFilter[likeIndex[2]]} like ?
+                            and {userFilter[lessThanIndex[0]]} <= ?
+                            and {userFilter[lessThanIndex[1]]} <= ?;
+                        """
+                        args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), ("%") + userInput[likeIndex[2]] + ("%"), userInput[lessThanIndex[0]], userInput[lessThanIndex[1]]]                                 
+        case 6: 
+            statement = f"""
+                select tvTitle from tvDetails
+                where {userFilter[likeIndex[0]]} like ?
+                    and {userFilter[likeIndex[1]]} like ?
+                    and {userFilter[likeIndex[2]]} like ?
+                    and {userFilter[lessThanIndex[0]]} <= ?
+                    and {userFilter[lessThanIndex[1]]} <= ?
+                    and strftime('%Y', {userFilter[yearIndex]}) = ?;
+                """
+            args = [("%") + userInput[likeIndex[0]] + ("%"), ("%") + userInput[likeIndex[1]] + ("%"), ("%") + userInput[likeIndex[2]] + ("%"), userInput[lessThanIndex[0]], userInput[lessThanIndex[1]], userInput[yearIndex]] 
+    cur.execute(statement, args)
+    rows = cur.fetchall()
+    while True:     
+        clearTerminal()               
+        print("\033[1m" + "\nResults:" "\033[0m")
+        i = 1
+        for row in rows:
+            print(f"{row[0]}")
+            i += 1
+        
+        print("\n\033[1m" + "Options:" + "\033[0m")
+        userInput = input("1. More detail on film\n2. Add film\n3: Search Again\n0: Cancel Search\n Enter option: ")
+        if userInput == "1":
+            clearTerminal()               
+            print("\033[1m" + "\nResults:" + "\033[0m")
+            i = 1
+            for row in rows:
+                print(f"{i}: {row[0]}")
+                i += 1
+            numFilm = input("\nWhich film # do you want see more detail about (0 to cancel): ")
+            if int(numFilm) > 0 and int(numFilm) < i:
+                getYear = """select strftime('%Y', airDate) from tvDetails
+                    where tvTitle = ?;"""
+                args = [rows[int(numFilm) - 1][0]]
+                cur.execute(getYear, args)
+                yearResult = cur.fetchall()
+                filmDetails(rows[int(numFilm) - 1][0], _conn, yearResult[0][0])
+        elif userInput == "2":
+            if add:
+                clearTerminal()               
+                print("\033[1m" + "\nResults:" + "\033[0m")
+                i = 1
+                for row in rows:
+                    print(f"{i}: {row[0]}")
+                    i += 1
+                addFilm = input("\nWhich film # do you want to add (0 to cancel): ")
+                if toWatchList: 
+                        if int(addFilm) > 0 and int(addFilm) < i:
+                            addToWatchLater(id, rows[int(addFilm) - 1][0], _conn)
+                            return 0
+                if toOwnedFilms:
+                    if int(addFilm) >  0 and int(addFilm) < i:
+                        resolution = input("Enter resolution of film (0 for none): ")
+                        subtitles = input("Enter subtitle language (0 for none): ")
+                        addToOwnedFilm(id, rows[int(addFilm) - 1][0], resolution, subtitles, _conn)
+                        return 0
+        elif userInput == "3":
+            searchTV(id, add, toWatchList, toOwnedFilms, _conn)
+            return 0
+        elif userInput == "0":
+            return 0  
+    return 0
+
+def filterMovie(id, userFilter, userInput, add, toWatchList, toOwnedFilms, _conn):
     cur = _conn.cursor()
     runtime = False
     runtimeIndex = -1
@@ -483,8 +885,7 @@ def filterMovie(id, userFilter, userInput, add, _conn):
                     and {userFilter[1]} like ?
                     and {userFilter[2]} like ?
                     and {userFilter[3]} like ?;"""
-                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%")]
-        
+                args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%")]      
         case 5:
             i = 0
             for attribute in userFilter:
@@ -539,21 +940,75 @@ def filterMovie(id, userFilter, userInput, add, _conn):
                 args = [("%") + userInput[0] + ("%"), ("%") + userInput[1] + ("%"), ("%") + userInput[2] + ("%"), ("%") + userInput[3] + ("%"), ("%") + userInput[4] + ("%"), ("%") + userInput[5] + ("%")]
         
     cur.execute(statement, args)
-    
     rows = cur.fetchall()
-    print("\nResults:")
-    i = 1
-    for row in rows:
-        print(f"{i}: {row[0]}")
-        i += 1
-    
-    if add:
-        addFilm = input("Which film # do you want to add: ")
-        if int(addFilm) > 0 and int(addFilm) < i:
-            addToWatchLater(id, rows[int(addFilm) - 1][0], _conn)
+    while True:       
+        clearTerminal()             
+        print("\033[1m" + "\nResults:" + "\033[0m" )
+        i = 1
+        for row in rows:
+            print(f"{row[0]}")
+            i += 1
+        
+        print("\n\033[1m" + "Options:" + "\033[0m")
+        userInput = input("1. More detail on film\n2. Add film\n3: Search Again\n0: Cancel Search\n Enter option: ")
+        if userInput == "1":
+                clearTerminal()
+                i = 1
+                print("\033[1m" + "\nResults:" + "\033[0m" )
+                for row in rows:
+                    print(f"{i}: {row[0]}")
+                    i += 1
+                numFilm = input("\nWhich film # do you want see more detail about: ")
+                if int(numFilm) > 0 and int(numFilm) < i:
+                    getYear = """select year from movieDetails
+                            where movieTitle = ?;"""
+                    args = [rows[int(numFilm) - 1][0]]
+                    cur.execute(getYear, args)
+                    yearResult = cur.fetchall()
+                    filmDetails(rows[int(numFilm) - 1][0], _conn, yearResult[0][0])
+        elif userInput == "2":
+            if add:
+                clearTerminal()
+                i = 1
+                print("\033[1m" + "\nResults:" + "\033[0m" )
+                for row in rows:
+                    print(f"{i}: {row[0]}")
+                    i += 1
+                addFilm = input("\nWhich film # do you want to add (0 to cancel): ")
+                if toWatchList: 
+                        if int(addFilm) > 0 and int(addFilm) < i:
+                            addToWatchLater(id, rows[int(addFilm) - 1][0], _conn)
+                            return 0
+                if toOwnedFilms:
+                    if int(addFilm) >  0 and int(addFilm) < i:
+                        resolution = input("Enter resolution of film (0 for none): ")
+                        subtitles = input("Enter subtitle language (0 for none): ")
+                        addToOwnedFilm(id, rows[int(addFilm) - 1][0], resolution, subtitles, _conn)
+                        return 0
+        elif userInput == "3":
+            searchMovie(id, add, toWatchList, toOwnedFilms, _conn)
             return 0
-    else:
-        input("Press enter to continue...")
+        elif userInput == "0":
+            return 0  
+    
+    return 0
+
+def addToOwnedFilm(id, filmTitle, resolution, subtitles, _conn):
+    cur = _conn.cursor()
+    statement = "insert into OwnedFilms values (?, ? , ?)"
+    args = [id, filmTitle, resolution]
+    cur.execute(statement, args)
+    
+    if subtitles != "0":
+        statement = "insert into Subtitles values (?, ?)"
+        args = [filmTitle, subtitles]
+        cur.execute(statement, args)
+    clearTerminal()
+    print(filmTitle, "HAS BEEN ADDED TO OWNED FILMS")
+    input("Press enter to continue...")
+    
+    # Uncomment to commit
+    # cur.commit()
     
     return 0
 
@@ -564,12 +1019,18 @@ def addToWatchLater(id, filmTitle, _conn):
     """
     args = [id, filmTitle]
     cur.execute(statement, args)
+    clearTerminal()
     print(filmTitle, " HAS BEEN ADDED TO WATCH LATER")
     input("Press enter to continue...")
+    
+    # Uncomment to commit
+    # cur.commit()
+    
     return 0
 
 def streamPlat(id, _conn):
     while True:
+        clearTerminal()
         print("------------------------------------------")
         print("\nPLATFORM MANAGER")
         print("0. Return back")
@@ -587,7 +1048,131 @@ def streamPlat(id, _conn):
             searchPlat(id, _conn)
 
 def searchPlat(id, _conn):
+    clearTerminal()
     print("------------------------------------------")
+    print("SEARCH ACROSS OWNED PLATFORMS:")
+    while True:
+        print("\033[1m" + "\nSelect film type" + "\033[0m")
+        print("\033[1m" + "Enter 0 to cancel" + "\033[0m")
+        filmType = (input("1. TV show \n2. Movie \nEnter option: ")).upper()
+        
+        if filmType == "1":
+            searchPlatFilm(id, filmType, _conn)
+        elif filmType == "2":
+            searchPlatFilm(id, filmType, _conn)
+        elif filmType == "0":
+            return
+        else:
+            print("Invalid Input")
+
+def searchPlatFilm(id, type, _conn):
+    clearTerminal()
+    if type == "1":
+        filmType = "Tv Show"
+        fType = 1
+        while True:
+            choice = input("\nSearch by %s's \n1. Title \n2. Year \n3. Genre \n0. return \nEnter option: " % (filmType))
+            if choice == "0":
+                return 0
+            if choice == "1":
+                clearTerminal()
+                title = input("0 to return or Enter %s's title: " % (filmType)).upper()
+                if title == "0":
+                    return searchPlatFilm(id, type, _conn)
+                else:
+                    searchPlatFilmTitle(id, fType, title, _conn)
+    if type == "2":
+        filmType = "Movie"
+        fType = 0
+    while True:
+        choice = input("\nSearch by %s's \n1. Title \n2. Year \n3. Genre \n0. return \nEnter option: " % (filmType))
+        if choice == "0":
+            return 0
+        if choice == "1":
+            title = input("0 to return or Enter %s's title: " % (filmType)).upper()
+            if title == "0":
+                return searchPlatFilm(id, type, _conn)
+            else:
+                searchPlatFilmTitle(id, fType, title, _conn)
+
+def searchPlatFilmTitle(id, fType, title, _conn):
+    p_list = {}
+    title = '%' + title + '%'
+    statement = """SELECT filmTitle
+                    FROM streamingPlat, Users
+                    WHERE UPPER(filmTitle) like ? 
+                        AND filmPrime = amazonPrime
+                        AND amazonPrime = 1
+                        AND userID = ?
+                        AND filmType = ?"""
+    args = [title, id, fType]
+    cur = _conn.cursor()
+    cur.execute(statement, args)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            p_list[row[0]] = []
+            p_list[row[0]].append("in Amazon Prime")
+    
+    statement = """SELECT filmTitle
+                    FROM streamingPlat, Users
+                    WHERE UPPER(filmTitle) like ? 
+                        AND filmHulu = hulu
+                        AND hulu = 1
+                        AND userID = ?
+                        AND filmType = ?"""
+    args = [title, id, fType]
+    cur = _conn.cursor()
+    cur.execute(statement, args)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Hulu")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Hulu")
+
+    statement = """SELECT filmTitle
+                    FROM streamingPlat, Users
+                    WHERE UPPER(filmTitle) like ? 
+                        AND filmNetflix = netflix
+                        AND netflix = 1
+                        AND userID = ?
+                        AND filmType = ?"""
+    args = [title, id, fType]
+    cur = _conn.cursor()
+    cur.execute(statement, args)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Netflix")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Netflix")
+
+    statement = """SELECT filmTitle
+                    FROM streamingPlat, Users
+                    WHERE UPPER(filmTitle) like ? 
+                        AND filmDisney = disney
+                        AND disney = 1
+                        AND userID = ?
+                        AND filmType = ?"""
+    args = [title, id, fType]
+    cur = _conn.cursor()
+    cur.execute(statement, args)
+    rows = cur.fetchall()
+    if rows:
+        for row in rows:
+            if row[0] in p_list:
+                p_list[row[0]].append("in Disney")
+            else:
+                p_list[row[0]] = []
+                p_list[row[0]].append("in Disney")
+
+    for key, values in p_list.items():
+        print(f"{key} {' '.join(values)}")
 
 
 def viewPlat(id, _conn):
