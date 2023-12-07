@@ -320,7 +320,7 @@ def watchLaterInterface(name, id, _conn):
             print("0: Cancel")
             deleteRow = input("\nSelect number ")
             if int(deleteRow) != 0:
-                filmDetails(rows[int(deleteRow) - 1][1], _conn)
+                filmDetails(rows[int(deleteRow) - 1][1], _conn, 0, id, True)
         else:
             print("Invalid option")
         
@@ -456,8 +456,7 @@ def filmDetails (filmName, _conn, year = 0, id = 0, ownedFilms = False):
         for row in subs:
             print(row[1], end="p ")    
         print()
-    
-    availInPlat(id, _conn, filmName)
+        availInPlat(id, _conn, filmName)
     
     input("\nPress enter to continue...")
 
@@ -494,36 +493,39 @@ def availInPlat(id, _conn, filmName):
 
     print(f"{filmName} is", end=" ")
     notFound = True
-    if len(filmPlat) == 1:
+    
+    if len(filmPlat) == 1 and len(filmPlat) == 1:
         if avPlat[0][0] == 1 and filmPlat[0][0] == 1:
             if notFound:
-                print("Netflix")
+                print("Netflix", end=" ")
                 notFound = False
             else:
-                print("and Netflix")
-        elif avPlat[0][1] == 1 and filmPlat[0][1] == 1:
+                print("and Netflix", end=" ")
+        if avPlat[0][1] == 1 and filmPlat[0][1] == 1:
             if notFound:
-                print("Hulu")
+                print("Hulu", end=" ")
                 notFound = False
             else:
                 print("and Hulu")
-        elif avPlat[0][2] == 1 and filmPlat[0][2] == 1:
+        if avPlat[0][2] == 1 and filmPlat[0][2] == 1:
             if notFound:
-                print("Amazon Prime")
+                print("Amazon Prime", end=" ")
                 notFound = False
             else:
-                print("and Amazon Prime")
-        elif avPlat[0][3] == 1 and filmPlat[0][3] == 1:
+                print("and Amazon Prime", end=" ")
+        if avPlat[0][3] == 1 and filmPlat[0][3] == 1:
             if notFound:
-                print("Disney Plus")
+                print("Disney Plus", end=" ")
                 notFound = False
             else:
-                print("and Disney Plus")
-        else:
-            print("not available in your current subscriptions")
+                print("and Disney Plus", end=" ")
     else:
        print("not available in your current subscriptions") 
+       notFound = False
     
+    if notFound:
+        print("not available in your current subscriptions") 
+        
     return 0
 
 
@@ -1235,6 +1237,7 @@ def searchPlatFilmYear(id, ftype, title, _conn):
 def searchPlatFilmTitle(id, fType, title, _conn):
     p_list = {}
     title = '%' + title + '%'
+    print(fType, title, id)
     statement = """SELECT filmTitle
                     FROM streamingPlat, Users
                     WHERE UPPER(filmTitle) like ? 
@@ -1246,6 +1249,7 @@ def searchPlatFilmTitle(id, fType, title, _conn):
     cur = _conn.cursor()
     cur.execute(statement, args)
     rows = cur.fetchall()
+    print(rows)
     if rows:
         for row in rows:
             p_list[row[0]] = []
